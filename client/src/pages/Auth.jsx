@@ -6,6 +6,7 @@ import API from "../api/axios";
 import toast from "react-hot-toast";
 import { AlertCircle } from "lucide-react";
 import Button from "../components/ui/Button";
+import useSEO from "../hooks/useSEO";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +15,13 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useSEO({
+    title: isLogin ? "Sign In & Level Up" : "Create Account — Start Tracking",
+    description: isLogin
+      ? "Sign in to HabitForge to access your gamified habit streaks, daily XP progress, and consistency badges."
+      : "Create your free HabitForge account. Forge productive habits, gain XP, and level up your daily routines.",
+  });
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -94,11 +102,11 @@ export default function Auth() {
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px]" />
       </div>
 
-      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 space-y-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)] relative z-10">
+      <main className="w-full max-w-md bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 space-y-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)] relative z-10">
         <div className="text-center space-y-2">
           <img
             src={logo}
-            alt="HabitForge Logo"
+            alt="HabitForge — Gamified Habit Tracker & Routine Builder Emblem"
             className="w-16 h-16 mx-auto mb-2 opacity-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]"
           />
           <h1 className="text-3xl font-extrabold text-emerald-400 tracking-tight">HabitForge</h1>
@@ -188,7 +196,7 @@ export default function Auth() {
             )}
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

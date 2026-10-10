@@ -1,0 +1,13 @@
+# HabitForge Robots Configuration
+User-agent: *
+Allow: /
+Allow: /auth
+Allow: /verify-email
+
+# Prevent crawlers from indexing private authenticated sessions and internal endpoints
+Disallow: /api/
+Disallow: /dashboard
+
+# Sitemap
+Sitemap: https://habitforge.app/sitemap.xml
+

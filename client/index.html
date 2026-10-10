@@ -1,12 +1,89 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="./src/assets/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <link rel="canonical" href="https://habitforge.app" />
+
+    <!-- Primary On-Page SEO Meta Tags -->
+    <title>HabitForge — Gamified Habit Tracker & Daily Routine Builder</title>
+    <meta
+      name="description"
+      content="Build lasting daily habits, maintain consistency streaks, earn XP, and level up your life with HabitForge — the modern gamified habit tracker and routine builder."
+    />
+    <meta
+      name="keywords"
+      content="habit tracker, gamified habit tracker, routine builder, daily habits, streak tracker, productivity app, self improvement, habit gamification"
+    />
+    <meta name="author" content="HabitForge" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- Mobile & PWA Theme Metadata -->
+    <meta name="theme-color" content="#10b981" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="HabitForge" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HabitForge" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicons & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <!-- Off-Page & Social Media SEO (Open Graph Protocol) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HabitForge" />
+    <meta property="og:url" content="https://habitforge.app" />
+    <meta property="og:title" content="HabitForge — Gamified Habit Tracker & Daily Routine Builder" />
+    <meta
+      property="og:description"
+      content="Build lasting daily habits, maintain consistency streaks, earn XP, and level up your life with HabitForge."
+    />
+    <meta property="og:image" content="https://habitforge.app/logo.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="HabitForge Brand Emblem" />
+
+    <!-- Off-Page & Social Media SEO (Twitter / X Cards) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@HabitForgeApp" />
+    <meta name="twitter:title" content="HabitForge — Gamified Habit Tracker & Daily Routine Builder" />
+    <meta
+      name="twitter:description"
+      content="Build lasting daily habits, maintain consistency streaks, earn XP, and level up your life with HabitForge."
+    />
+    <meta name="twitter:image" content="https://habitforge.app/logo.png" />
+    <meta name="twitter:image:alt" content="HabitForge Brand Emblem" />
+
+    <!-- Technical SEO: Schema.org Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "HabitForge",
+        "url": "https://habitforge.app",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "description": "Gamified habit tracker that turns daily routine consistency into an engaging RPG experience with XP, levels, streak freezes, and achievement badges.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Gamified XP leveling system",
+          "Streak consistency tracker with streak freeze protections",
+          "Interactive 4-week activity heatmap",
+          "Category breakdown analytics and JSON data export",
+          "Secure 6-digit cryptographic email OTP authentication"
+        ]
+      }
+    </script>
   </head>
-  <body>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

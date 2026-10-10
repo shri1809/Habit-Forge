@@ -5,12 +5,18 @@ import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import Button from "../components/ui/Button";
+import useSEO from "../hooks/useSEO";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
+
+  useSEO({
+    title: "Verify Your Email Address",
+    description: "Enter your 6-digit verification code to confirm your email and activate your HabitForge account.",
+  });
 
   // Redirect if user is already verified and authenticated
   useEffect(() => {
@@ -234,15 +240,15 @@ export default function VerifyEmail() {
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px]" />
       </div>
 
-      <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl max-w-md w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)] space-y-6 relative z-10">
+      <main className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl max-w-md w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)] space-y-6 relative z-10">
         {/* Header Icon */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-500/20 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
             {isSuccess ? <CheckCircle2 size={32} /> : <ShieldCheck size={32} />}
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
             {isSuccess ? "Account Verified!" : "Verify Your Email"}
-          </h2>
+          </h1>
           <p className="text-xs text-slate-400 leading-relaxed">
             {isSuccess
               ? "Your email has been confirmed. You are ready to forge your habits."
@@ -388,7 +394,7 @@ export default function VerifyEmail() {
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

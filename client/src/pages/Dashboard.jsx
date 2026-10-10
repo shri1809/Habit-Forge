@@ -10,9 +10,16 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
 import { calculateLevelProgress, calculateDailyHabitProgress } from "../utils/gamification";
 import Button from "../components/ui/Button";
+import useSEO from "../hooks/useSEO";
 
 export default function Dashboard() {
   const { user, setUser } = useAuth();
+
+  useSEO({
+    title: "Daily Habits & Consistency Dashboard",
+    description: "Track your habits, build consistency streaks, earn XP, and level up your daily routines with HabitForge.",
+  });
+
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
@@ -192,7 +199,7 @@ export default function Dashboard() {
         <div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+      <main className="max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/50 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="flex-1 w-full sm:w-auto">
@@ -484,7 +491,7 @@ export default function Dashboard() {
               ))
           )}
         </section>
-      </div>
+      </main>
 
       <BadgeModal
         isOpen={isBadgeModalOpen}

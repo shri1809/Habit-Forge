@@ -39,7 +39,7 @@ export default function Header() {
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <img 
             src={logo} 
-            alt="HF" 
+            alt="HabitForge — Gamified Habit Tracker" 
             className="w-8 h-8 opacity-90 group-hover:opacity-100 transition drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]"
           />
           <span className="text-xl font-bold text-white group-hover:text-emerald-400 transition tracking-tight">

@@ -1,0 +1,23 @@
+{
+  "name": "HabitForge - Gamified Habit Tracker & Routine Builder",
+  "short_name": "HabitForge",
+  "description": "Build daily routines, earn XP, maintain streaks, and level up your habits with HabitForge.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
