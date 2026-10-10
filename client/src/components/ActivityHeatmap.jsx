@@ -34,19 +34,19 @@ export default function ActivityHeatmap() {
   });
 
   const getColorIntensity = (count) => {
-    if (count === 0) return "bg-slate-800 border-slate-700/50";
-    if (count === 1) return "bg-emerald-800 border-emerald-700 text-emerald-100";
-    if (count === 2) return "bg-emerald-600 border-emerald-500 text-white";
-    return "bg-emerald-400 border-emerald-300 text-slate-950 font-bold";
+    if (count === 0) return "bg-slate-800/40 border-white/5 text-slate-500 hover:border-white/20";
+    if (count === 1) return "bg-emerald-900/60 border-emerald-500/30 text-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.15)]";
+    if (count === 2) return "bg-emerald-600/80 border-emerald-400/50 text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]";
+    return "bg-emerald-400 border-emerald-300 text-slate-950 font-bold shadow-[0_0_15px_rgba(52,211,153,0.5)]";
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)]">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-slate-200">
+        <h3 className="text-base font-bold text-slate-200 tracking-tight">
           Consistency Grid (Last 4 Weeks)
         </h3>
-        <span className="text-xs text-slate-500">Completed Habits / Day</span>
+        <span className="text-xs text-slate-400">Completed Habits / Day</span>
       </div>
 
       {loading ? (
@@ -59,7 +59,7 @@ export default function ActivityHeatmap() {
             <div
               key={day.date}
               title={`${day.label}: ${day.count} completion${day.count === 1 ? "" : "s"}`}
-              className={`h-10 rounded-lg border flex flex-col items-center justify-center transition-transform hover:scale-105 cursor-pointer ${getColorIntensity(
+              className={`h-10 rounded-lg border flex flex-col items-center justify-center transition-all duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.08] active:scale-[0.94] cursor-pointer backdrop-blur-sm select-none ${getColorIntensity(
                 day.count
               )}`}
             >
@@ -72,9 +72,9 @@ export default function ActivityHeatmap() {
 
       <div className="flex items-center justify-end gap-2 mt-4 text-xs text-slate-500">
         <span>Less</span>
-        <span className="w-3 h-3 rounded bg-slate-800 border border-slate-700 inline-block" />
-        <span className="w-3 h-3 rounded bg-emerald-800 border border-emerald-700 inline-block" />
-        <span className="w-3 h-3 rounded bg-emerald-600 border border-emerald-500 inline-block" />
+        <span className="w-3 h-3 rounded bg-slate-800/40 border border-white/10 inline-block" />
+        <span className="w-3 h-3 rounded bg-emerald-900/60 border border-emerald-500/30 inline-block" />
+        <span className="w-3 h-3 rounded bg-emerald-600/80 border border-emerald-400/50 inline-block" />
         <span className="w-3 h-3 rounded bg-emerald-400 border border-emerald-300 inline-block" />
         <span>More</span>
       </div>

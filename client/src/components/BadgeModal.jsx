@@ -1,4 +1,5 @@
 import { Award, Crown, Footprints, Shield, X, Lock } from "lucide-react";
+import Button from "./ui/Button";
 
 const ALL_BADGES = [
   {
@@ -24,21 +25,24 @@ export default function BadgeModal({ isOpen, onClose, userBadges = [] }) {
   const unlockedBadgeNames = new Set(userBadges.map((b) => b.name));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
-        <button
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/15 w-full max-w-lg rounded-2xl p-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.15)] relative">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.08]"
+          title="Close"
         >
           <X size={20} />
-        </button>
+        </Button>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-purple-500/10 text-purple-400 rounded-xl">
+          <div className="p-2.5 bg-purple-500/15 text-purple-400 rounded-xl border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
             <Award size={24} />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">Achievements & Badges</h3>
+            <h3 className="text-xl font-bold text-white tracking-tight">Achievements & Badges</h3>
             <p className="text-xs text-slate-400">
               Unlock badges by building consistency and holding streaks.
             </p>
@@ -55,15 +59,15 @@ export default function BadgeModal({ isOpen, onClose, userBadges = [] }) {
                 key={badge.name}
                 className={`flex items-center gap-4 p-4 rounded-xl border transition ${
                   isUnlocked
-                    ? "bg-slate-800/60 border-purple-500/30 text-white"
-                    : "bg-slate-900/40 border-slate-800 text-slate-500 opacity-60"
+                    ? "bg-purple-950/25 backdrop-blur-md border-purple-500/35 text-white shadow-[0_4px_20px_rgba(168,85,247,0.15),inset_0_1px_0_0_rgba(255,255,255,0.1)]"
+                    : "bg-white/[0.02] backdrop-blur-sm border-white/5 text-slate-500 opacity-60"
                 }`}
               >
                 <div
                   className={`p-3 rounded-xl ${
                     isUnlocked
-                      ? "bg-purple-500/20 text-purple-300"
-                      : "bg-slate-800 text-slate-600"
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
+                      : "bg-slate-800/50 text-slate-600 border border-white/5"
                   }`}
                 >
                   <Icon size={24} />
@@ -74,7 +78,7 @@ export default function BadgeModal({ isOpen, onClose, userBadges = [] }) {
                       {badge.name}
                     </h4>
                     {isUnlocked ? (
-                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]">
                         Unlocked
                       </span>
                     ) : (

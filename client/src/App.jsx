@@ -55,9 +55,12 @@ export default function App() {
         position="top-right"
         toastOptions={{
           style: {
-            background: "#0f172a",
+            background: "rgba(15, 23, 42, 0.75)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
             color: "#f8fafc",
-            border: "1px solid #1e293b",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
             borderRadius: "0.75rem",
             fontSize: "0.875rem",
           },

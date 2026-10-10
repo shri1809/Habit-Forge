@@ -4,6 +4,7 @@ import { CheckCircle2, AlertCircle, Loader2, Mail, RefreshCw, ArrowLeft, ShieldC
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import Button from "../components/ui/Button";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -226,14 +227,20 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient Glass Glow Lighting */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl max-w-md w-full shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.1)] space-y-6 relative z-10">
         {/* Header Icon */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">
+          <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-emerald-500/20 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
             {isSuccess ? <CheckCircle2 size={32} /> : <ShieldCheck size={32} />}
           </div>
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="text-2xl font-bold text-white tracking-tight">
             {isSuccess ? "Account Verified!" : "Verify Your Email"}
           </h2>
           <p className="text-xs text-slate-400 leading-relaxed">
@@ -246,17 +253,19 @@ export default function VerifyEmail() {
         {/* Success View */}
         {isSuccess ? (
           <div className="space-y-4 pt-2">
-            <button
+            <Button
               onClick={() => navigate(user ? "/dashboard" : "/auth")}
-              className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
+              variant="primary"
+              size="none"
+              className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2"
             >
               {user ? "Continue to Dashboard" : "Sign In to HabitForge"}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="space-y-5">
             {/* Target Email Info & Edit Option */}
-            <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex items-center justify-between text-xs">
+            <div className="bg-white/[0.04] backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center justify-between text-xs shadow-inner">
               <div className="flex items-center gap-2 text-slate-300 truncate">
                 <Mail size={16} className="text-emerald-400 shrink-0" />
                 {isEditingEmail ? (
@@ -265,7 +274,7 @@ export default function VerifyEmail() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white focus:outline-none focus:border-emerald-500 text-xs w-48"
+                    className="bg-slate-950/60 border border-white/15 rounded px-2.5 py-1 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-500/20 text-xs w-48 shadow-inner"
                   />
                 ) : (
                   <span className="font-medium truncate" title={email}>
@@ -273,20 +282,22 @@ export default function VerifyEmail() {
                   </span>
                 )}
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="none"
                 onClick={() => setIsEditingEmail(!isEditingEmail)}
-                className="text-emerald-400 hover:text-emerald-300 font-semibold shrink-0 cursor-pointer ml-2"
+                className="text-emerald-400 hover:text-emerald-300 font-semibold shrink-0 ml-2 py-0.5 px-1.5 rounded"
               >
                 {isEditingEmail ? "Done" : "Change"}
-              </button>
+              </Button>
             </div>
 
             {/* Error Message */}
             {errorMessage && (
               <div
                 role="alert"
-                className="flex items-start gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs"
+                className="flex items-start gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs backdrop-blur-md"
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
@@ -320,7 +331,7 @@ export default function VerifyEmail() {
                     onChange={(e) => handleDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
                     disabled={loading}
-                    className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200"
+                    className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black bg-slate-950/60 backdrop-blur-md border border-white/15 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 shadow-inner transition-all duration-200"
                   />
                 ))}
               </div>
@@ -328,11 +339,13 @@ export default function VerifyEmail() {
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="none"
                 disabled={loading || otp.join("").length !== 6}
                 onClick={() => submitVerification()}
-                className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
+                className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -341,29 +354,31 @@ export default function VerifyEmail() {
                 ) : (
                   "Verify Code"
                 )}
-              </button>
+              </Button>
 
               {/* Resend Code with Cooldown */}
               <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                 <span>Didn't receive the code?</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="none"
                   disabled={cooldown > 0 || resending}
                   onClick={handleResend}
-                  className={`font-semibold flex items-center gap-1 transition ${
+                  className={`font-semibold flex items-center gap-1 py-1 px-1.5 rounded ${
                     cooldown > 0
                       ? "text-slate-500 cursor-not-allowed"
-                      : "text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                      : "text-emerald-400 hover:text-emerald-300"
                   }`}
                 >
                   <RefreshCw size={12} className={resending ? "animate-spin" : ""} />
                   {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend Code"}
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Back to Sign In */}
-            <div className="text-center pt-2 border-t border-slate-800/80">
+            <div className="text-center pt-2 border-t border-white/10">
               <Link
                 to="/auth"
                 className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
