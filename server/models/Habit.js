@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const habitSchema = new mongoose.Schema(
   {
     user: {
@@ -58,9 +57,7 @@ const habitSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 // Indexes
 habitSchema.index({ user: 1, isArchived: 1 });
-
 const Habit = mongoose.model("Habit", habitSchema);
 export default Habit;
