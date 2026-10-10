@@ -81,7 +81,20 @@ export const registerUser = async (req, res) => {
     return res.status(400).json({ message: "Please provide all required fields" });
   }
 
+  if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({ message: "Invalid input format" });
+  }
+
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const normalizedEmail = email.toLowerCase().trim();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Please provide a valid email address" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long" });
+  }
 
   const userExists = await User.findOne({ email: normalizedEmail });
   if (userExists) {
@@ -315,6 +328,10 @@ export const loginUser = async (req, res) => {
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  if (typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({ message: "Invalid email or password format" });
   }
 
   const normalizedEmail = email.toLowerCase().trim();

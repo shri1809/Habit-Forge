@@ -8,22 +8,23 @@ import {
   verifyEmail,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", authLimiter, registerUser);
+router.post("/login", authLimiter, loginUser);
 
 // OTP Verification endpoints (supporting both naming conventions)
-router.post("/verify-email-otp", verifyOTP);
-router.post("/verify-otp", verifyOTP);
+router.post("/verify-email-otp", authLimiter, verifyOTP);
+router.post("/verify-otp", authLimiter, verifyOTP);
 
 // Resend OTP endpoints
-router.post("/resend-email-otp", resendOTP);
-router.post("/resend-otp", resendOTP);
+router.post("/resend-email-otp", authLimiter, resendOTP);
+router.post("/resend-otp", authLimiter, resendOTP);
 
 // Backward-compatible verification link endpoint
-router.post("/verify-email", verifyEmail);
+router.post("/verify-email", authLimiter, verifyEmail);
 
 router.get("/profile", protect, getUserProfile);
 

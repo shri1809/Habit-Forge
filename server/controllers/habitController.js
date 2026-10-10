@@ -15,8 +15,12 @@ export const createHabit = async (req, res) => {
   try {
     const { title, description, category, color, icon, frequency } = req.body;
 
-    if (!title || !title.trim()) {
-      return res.status(400).json({ message: "Habit title is required" });
+    if (!title || typeof title !== "string" || !title.trim()) {
+      return res.status(400).json({ message: "Habit title is required and must be text" });
+    }
+
+    if (title.trim().length > 100) {
+      return res.status(400).json({ message: "Habit title cannot exceed 100 characters" });
     }
 
     // Check free tier habit limits
