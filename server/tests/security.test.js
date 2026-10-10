@@ -92,6 +92,18 @@ describe("Comprehensive Security Controls & Audits", () => {
       expect(res.body.message).toContain("CORS policy violation");
     });
 
+    it("allows CORS preflight OPTIONS requests with x-user-timezone header", async () => {
+      const res = await request(app)
+        .options("/api/habits")
+        .set("Origin", "http://localhost:5173")
+        .set("Access-Control-Request-Method", "POST")
+        .set("Access-Control-Request-Headers", "authorization,content-type,x-user-timezone");
+
+      expect(res.status).toBe(204);
+      expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
+      expect(res.headers["access-control-allow-headers"]).toMatch(/x-user-timezone/i);
+    });
+
     it("attaches standard RateLimit headers to authentication routes", async () => {
       const res = await request(app).post("/api/auth/login").send({});
 
