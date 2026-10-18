@@ -39,6 +39,7 @@ app.use(
 const allowedOrigins = [
   "http://localhost:5173",
   "https://habit-forge-six-chi.vercel.app",
+  "https://habit-forge-a2m384uqc-web-app-f9b9.vercel.app",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
