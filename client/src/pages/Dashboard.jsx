@@ -1,23 +1,39 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import API from "../api/axios";
-import { Plus, Check, Flame, Trophy, Award, Trash2, Archive, RotateCcw, Snowflake, BarChart3 } from "lucide-react";
+import {
+  Plus,
+  Check,
+  Flame,
+  Trophy,
+  Award,
+  Trash2,
+  Archive,
+  RotateCcw,
+  Snowflake,
+  BarChart3,
+} from "lucide-react";
 import confetti from "canvas-confetti";
 import ActivityHeatmap from "../components/ActivityHeatmap";
 import BadgeModal from "../components/BadgeModal";
 import AnalyticsModal from "../components/AnalyticsModal";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
-import { calculateLevelProgress, calculateDailyHabitProgress } from "../utils/gamification";
+import {
+  calculateLevelProgress,
+  calculateDailyHabitProgress,
+} from "../utils/gamification";
 import Button from "../components/ui/Button";
 import useSEO from "../hooks/useSEO";
+import BottomCommunitySection from "../components/BottomCommunitySection";
 
 export default function Dashboard() {
   const { user, setUser } = useAuth();
 
   useSEO({
     title: "Daily Habits & Consistency Dashboard",
-    description: "Track your habits, build consistency streaks, earn XP, and level up your daily routines with HabitForge.",
+    description:
+      "Track your habits, build consistency streaks, earn XP, and level up your daily routines with HabitForge.",
   });
 
   const [habits, setHabits] = useState([]);
@@ -93,9 +109,13 @@ export default function Dashboard() {
       setHabits((prevHabits) =>
         prevHabits.map((h) =>
           h._id === habitId
-            ? { ...h, isCompletedToday: true, currentStreak: (h.currentStreak || 0) + 1 }
-            : h
-        )
+            ? {
+                ...h,
+                isCompletedToday: true,
+                currentStreak: (h.currentStreak || 0) + 1,
+              }
+            : h,
+        ),
       );
 
       setUser((prev) => ({
@@ -127,7 +147,7 @@ export default function Dashboard() {
       toast.success(
         data?.deductedXp > 0
           ? `Habit removed (-${data.deductedXp} XP)`
-          : "Habit removed"
+          : "Habit removed",
       );
     } catch {
       toast.error("Failed to delete habit");
@@ -140,7 +160,7 @@ export default function Dashboard() {
     try {
       await API.patch(`/habits/${habitId}/archive`);
       setHabits((prev) =>
-        prev.map((h) => (h._id === habitId ? { ...h, isArchived: true } : h))
+        prev.map((h) => (h._id === habitId ? { ...h, isArchived: true } : h)),
       );
       toast.success("Habit archived");
     } catch {
@@ -152,7 +172,7 @@ export default function Dashboard() {
     try {
       await API.patch(`/habits/${habitId}/unarchive`);
       setHabits((prev) =>
-        prev.map((h) => (h._id === habitId ? { ...h, isArchived: false } : h))
+        prev.map((h) => (h._id === habitId ? { ...h, isArchived: false } : h)),
       );
       toast.success("Habit restored to active list");
     } catch {
@@ -206,13 +226,17 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-white tracking-tight">
               Welcome, {user?.name}
             </h1>
-            <p className="text-sm text-slate-400 mb-3">Keep your momentum alive today!</p>
-            
+            <p className="text-sm text-slate-400 mb-3">
+              Keep your momentum alive today!
+            </p>
+
             {/* Level & XP Progress Bar */}
             <div className="max-w-md">
               <div className="flex justify-between items-center text-xs mb-1.5 font-semibold">
                 <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 font-bold">Level {currentLevel}</span>
+                  <span className="text-emerald-400 font-bold">
+                    Level {currentLevel}
+                  </span>
                   <span className="text-[10px] text-emerald-300/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono">
                     Next: Lv. {nextLevel}
                   </span>
@@ -235,12 +259,18 @@ export default function Dashboard() {
                 />
               </div>
               <div className="flex justify-between items-center text-[11px] text-slate-500 mt-1 font-medium">
-                <span>{progressPercent}% towards Level {nextLevel}</span>
-                <span>{xpRemaining > 0 ? `${xpRemaining} XP to go` : "Level Up Ready!"}</span>
+                <span>
+                  {progressPercent}% towards Level {nextLevel}
+                </span>
+                <span>
+                  {xpRemaining > 0
+                    ? `${xpRemaining} XP to go`
+                    : "Level Up Ready!"}
+                </span>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button
               onClick={() => setIsAnalyticsModalOpen(true)}
@@ -254,68 +284,83 @@ export default function Dashboard() {
 
         {/* Gamification Stats Banner */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
-                <div className="p-3 bg-emerald-500/15 text-emerald-400 rounded-xl border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                    <Trophy size={28} />
-                </div>
-                <div>
-                    <p className="text-xs uppercase font-semibold text-slate-400">Level</p>
-                    <h2 className="text-2xl font-black text-white">Level {user?.level || 1}</h2>
-                </div>
-            </div>  
-            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
-                <div className="p-3 bg-amber-500/15 text-amber-400 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                    <Flame size={28} />
-                </div>
-                <div>
-                    <p className="text-xs uppercase font-semibold text-slate-400">Total XP</p>
-                    <h2 className="text-2xl font-black text-white">{user?.xp || 0} XP</h2>
-                </div>
-            </div>  
-            <div
-              onClick={() => setIsBadgeModalOpen(true)}
-              className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-purple-500/40 p-5 rounded-2xl flex items-center gap-4 cursor-pointer shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 group"
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
+            <div className="p-3 bg-emerald-500/15 text-emerald-400 rounded-xl border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+              <Trophy size={28} />
+            </div>
+            <div>
+              <p className="text-xs uppercase font-semibold text-slate-400">
+                Level
+              </p>
+              <h2 className="text-2xl font-black text-white">
+                Level {user?.level || 1}
+              </h2>
+            </div>
+          </div>
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
+            <div className="p-3 bg-amber-500/15 text-amber-400 rounded-xl border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+              <Flame size={28} />
+            </div>
+            <div>
+              <p className="text-xs uppercase font-semibold text-slate-400">
+                Total XP
+              </p>
+              <h2 className="text-2xl font-black text-white">
+                {user?.xp || 0} XP
+              </h2>
+            </div>
+          </div>
+          <div
+            onClick={() => setIsBadgeModalOpen(true)}
+            className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-purple-500/40 p-5 rounded-2xl flex items-center gap-4 cursor-pointer shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 group"
+          >
+            <div className="p-3 bg-purple-500/15 text-purple-400 rounded-xl border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+              <Award size={28} />
+            </div>
+            <div>
+              <p className="text-xs uppercase font-semibold text-slate-400">
+                Badges
+              </p>
+              <h2 className="text-2xl font-black text-white">
+                {user?.badges?.length || 0} Unlocked
+              </h2>
+            </div>
+          </div>
+          {/* Streak Freeze Store Card */}
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center justify-between gap-2 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-cyan-500/15 text-cyan-400 rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                <Snowflake size={28} />
+              </div>
+              <div>
+                <p className="text-xs uppercase font-semibold text-slate-400">
+                  Freezes
+                </p>
+                <h2 className="text-2xl font-black text-white">
+                  {user?.streakFreezes || 0}
+                </h2>
+              </div>
+            </div>
+            <Button
+              size="none"
+              onClick={handleBuyFreeze}
+              title="Buy 1 Freeze for 50 XP"
+              rippleColor="rgba(6, 182, 212, 0.4)"
+              className="text-[11px] bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 px-2.5 py-1.5 rounded-lg font-semibold shadow-sm"
             >
-                <div className="p-3 bg-purple-500/15 text-purple-400 rounded-xl border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-                    <Award size={28} />
-                </div>
-                <div>
-                    <p className="text-xs uppercase font-semibold text-slate-400">Badges</p>
-                    <h2 className="text-2xl font-black text-white">
-                      {user?.badges?.length || 0} Unlocked
-                    </h2>
-                </div>
-            </div>
-              {/* Streak Freeze Store Card */}
-            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 p-5 rounded-2xl flex items-center justify-between gap-2 shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-cyan-500/15 text-cyan-400 rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-                        <Snowflake size={28} />
-                    </div>
-                    <div>
-                        <p className="text-xs uppercase font-semibold text-slate-400">Freezes</p>
-                        <h2 className="text-2xl font-black text-white">
-                          {user?.streakFreezes || 0}
-                        </h2>
-                    </div>
-                </div>
-                <Button
-                    size="none"
-                    onClick={handleBuyFreeze}
-                    title="Buy 1 Freeze for 50 XP"
-                    rippleColor="rgba(6, 182, 212, 0.4)"
-                    className="text-[11px] bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 px-2.5 py-1.5 rounded-lg font-semibold shadow-sm"
-                >
-                    +50 XP
-                </Button>
-            </div>
+              +50 XP
+            </Button>
+          </div>
         </section>
 
         {/* Consistency Grid */}
         <ActivityHeatmap />
 
         {/* Habit Creation Form */}
-        <form onSubmit={handleCreateHabit} className="flex flex-col sm:flex-row gap-3">
+        <form
+          onSubmit={handleCreateHabit}
+          className="flex flex-col sm:flex-row gap-3"
+        >
           <input
             type="text"
             placeholder="Add a new habit (e.g. Read 15 mins, Gym, Code)..."
@@ -328,11 +373,21 @@ export default function Dashboard() {
             onChange={(e) => setCategory(e.target.value)}
             className="bg-slate-900/60 backdrop-blur-xl border border-white/10 text-slate-300 rounded-xl px-3 py-3 focus:outline-none focus:border-emerald-400/60 transition cursor-pointer text-sm shadow-inner"
           >
-            <option value="General" className="bg-slate-900 text-white">General</option>
-            <option value="Health" className="bg-slate-900 text-white">Health</option>
-            <option value="Coding" className="bg-slate-900 text-white">Coding</option>
-            <option value="Study" className="bg-slate-900 text-white">Study</option>
-            <option value="Mindset" className="bg-slate-900 text-white">Mindset</option>
+            <option value="General" className="bg-slate-900 text-white">
+              General
+            </option>
+            <option value="Health" className="bg-slate-900 text-white">
+              Health
+            </option>
+            <option value="Coding" className="bg-slate-900 text-white">
+              Coding
+            </option>
+            <option value="Study" className="bg-slate-900 text-white">
+              Study
+            </option>
+            <option value="Mindset" className="bg-slate-900 text-white">
+              Mindset
+            </option>
           </select>
           <Button
             type="submit"
@@ -360,7 +415,8 @@ export default function Dashboard() {
               {!showArchived && totalActiveHabits > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/[0.05] text-slate-300 border border-white/10 backdrop-blur-sm">
-                    {completedHabitsCount}/{totalActiveHabits} ({habitsProgressPercent}%)
+                    {completedHabitsCount}/{totalActiveHabits} (
+                    {habitsProgressPercent}%)
                   </span>
                   {allHabitsCompleted && (
                     <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
@@ -404,7 +460,7 @@ export default function Dashboard() {
               </span>
             </div>
           )}
-          
+
           {loading ? (
             <p className="text-slate-500">Loading your habits...</p>
           ) : habits.length === 0 ? (
@@ -422,28 +478,37 @@ export default function Dashboard() {
                   {/* Left Side: Habit Info */}
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-white text-base tracking-tight">{habit.title}</h4>
+                      <h4 className="font-semibold text-white text-base tracking-tight">
+                        {habit.title}
+                      </h4>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-white/[0.05] text-slate-300 border border-white/10">
                         {habit.category || "General"}
                       </span>
                     </div>
                     <div className="mt-1">
                       <span className="flex items-center text-xs font-semibold text-amber-400">
-                        <Flame size={14} className="mr-1 inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                        <Flame
+                          size={14}
+                          className="mr-1 inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+                        />
                         {habit.currentStreak || 0} day streak
                       </span>
                     </div>
                   </div>
 
                   {/* Right Side: Actions */}
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     {!showArchived ? (
                       <>
                         <Button
                           disabled={habit.isCompletedToday}
                           onClick={() => handleCheckIn(habit._id)}
                           size="none"
-                          rippleColor={habit.isCompletedToday ? "transparent" : "rgba(255, 255, 255, 0.45)"}
+                          rippleColor={
+                            habit.isCompletedToday
+                              ? "transparent"
+                              : "rgba(255, 255, 255, 0.45)"
+                          }
                           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-sm transition ${
                             habit.isCompletedToday
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-default"
@@ -453,7 +518,7 @@ export default function Dashboard() {
                           <Check size={16} />
                           {habit.isCompletedToday ? "Done" : "Check In"}
                         </Button>
-                      
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -476,12 +541,12 @@ export default function Dashboard() {
                       </Button>
                     )}
 
-                    <Button 
+                    <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setHabitToDelete(habit._id)} 
+                      onClick={() => setHabitToDelete(habit._id)}
                       rippleColor="rgba(239, 68, 68, 0.4)"
-                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-white/[0.08] border border-transparent hover:border-white/10 rounded-lg" 
+                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-white/[0.08] border border-transparent hover:border-white/10 rounded-lg"
                       title="Delete habit"
                     >
                       <Trash2 size={16} />
@@ -510,6 +575,12 @@ export default function Dashboard() {
         onConfirm={handleDeleteHabit}
         onClose={() => setHabitToDelete(null)}
       />
+      <div className="...">
+        {/* All your existing habits, heatmaps, badges, etc. */}
+
+        {/* Bottom Section: Invite Friends & Feedback */}
+        <BottomCommunitySection />
+      </div>
     </div>
   );
 }

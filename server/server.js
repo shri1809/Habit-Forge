@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import habitRoutes from "./routes/habitRoutes.js";
 import { sanitizeMongoInput } from "./middleware/mongoSanitize.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ app.use("/api", apiLimiter);
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/habits", habitRoutes);
+app.use("/api/feedback",feedbackRoutes);
 
 // Root health check route
 app.get("/health", (req, res) => {
