@@ -21,7 +21,7 @@ export const submitFeedback = async (req, res) => {
     const validCategories = ["general", "feature_request", "bug_report", "praise"];
     const safeCategory = validCategories.includes(category) ? category : "general";
 
-    // 1. Store feedback in MongoDB database
+    // 1. Store feedback in MongoDB database (guaranteed persistence)
     const feedbackDoc = await Feedback.create({
       userId: req.user?._id || null,
       userEmail: senderEmail,
@@ -69,37 +69,53 @@ export const submitFeedback = async (req, res) => {
       </div>
     `;
 
-    // 3. Dispatch Email to habitforgev@gmail.com
+    // 3. Dispatch Email to habitforgev@gmail.com with fast fallbacks (no hanging)
     const targetRecipient = "habitforgev@gmail.com";
     let emailSent = false;
     let providerUsed = null;
 
-    // Method 1 (PRIMARY): Direct Gmail SMTP (Guaranteed Primary Inbox delivery to habitforgev@gmail.com)
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    // Fast Attempt 1: Resend HTTP REST API over Port 443 (Immediate execution, never blocked on cloud hosts)
+    if (process.env.RESEND_API_KEY) {
       try {
-        const isGmail = process.env.EMAIL_USER.endsWith("@gmail.com") && !process.env.SMTP_HOST;
-        const transportOptions = isGmail
-          ? {
-              service: "gmail",
-              auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-              },
-            }
-          : {
-              host: process.env.SMTP_HOST || "smtp.gmail.com",
-              port: Number(process.env.SMTP_PORT) || 587,
-              secure: process.env.SMTP_PORT === "465",
-              auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-              },
-            };
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const fromAddress = process.env.EMAIL_FROM || "HabitForge <onboarding@resend.dev>";
+        const { data, error } = await resend.emails.send({
+          from: fromAddress,
+          to: targetRecipient,
+          reply_to: senderEmail,
+          subject: emailSubject,
+          html: emailHtml,
+        });
 
-        const transporter = nodemailer.createTransport(transportOptions);
+        if (error) {
+          console.warn("Feedback Resend Notice:", error.message || error);
+        } else if (data?.id) {
+          emailSent = true;
+          providerUsed = "resend";
+        }
+      } catch (err) {
+        console.warn("Feedback Resend Error:", err.message);
+      }
+    }
+
+    // Fast Attempt 2: Gmail SMTP with strict 4-second timeout to prevent container hangs
+    if (!emailSent && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 4000,
+        });
+
         await transporter.sendMail({
           from: `"HabitForge Feedback" <${process.env.EMAIL_USER}>`,
           to: targetRecipient,
+          replyTo: senderEmail,
           subject: emailSubject,
           html: emailHtml,
         });
@@ -111,33 +127,10 @@ export const submitFeedback = async (req, res) => {
       }
     }
 
-    // Method 2 (FALLBACK): Resend HTTP API (Port 443 HTTPS)
-    if (!emailSent && process.env.RESEND_API_KEY) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const fromAddress = process.env.EMAIL_FROM || "HabitForge <onboarding@resend.dev>";
-        const { data, error } = await resend.emails.send({
-          from: fromAddress,
-          to: targetRecipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-
-        if (error) {
-          console.warn("Feedback Resend Notice:", error.message || error);
-        } else {
-          emailSent = true;
-          providerUsed = "resend";
-        }
-      } catch (err) {
-        console.warn("Feedback Resend Error:", err.message);
-      }
-    }
-
-    // Method 3 (FALLBACK): Brevo HTTP API (Port 443 HTTPS)
+    // Fast Attempt 3: Brevo HTTP REST API (Port 443)
     if (!emailSent && process.env.BREVO_API_KEY) {
       try {
-        const senderEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER || "habitforgev@gmail.com";
+        const senderEmailAddr = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER || "habitforgev@gmail.com";
         const response = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",
           headers: {
@@ -145,8 +138,9 @@ export const submitFeedback = async (req, res) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            sender: { name: "HabitForge Feedback", email: senderEmail },
+            sender: { name: "HabitForge Feedback", email: senderEmailAddr },
             to: [{ email: targetRecipient }],
+            replyTo: { email: senderEmail, name: senderName },
             subject: emailSubject,
             htmlContent: emailHtml,
           }),
@@ -154,9 +148,6 @@ export const submitFeedback = async (req, res) => {
         if (response.ok) {
           emailSent = true;
           providerUsed = "brevo";
-        } else {
-          const errBody = await response.text();
-          console.warn(`Feedback Brevo notice (${response.status}):`, errBody);
         }
       } catch (err) {
         console.warn("Feedback Brevo Error:", err.message);
@@ -173,9 +164,37 @@ export const submitFeedback = async (req, res) => {
       saved: true,
       emailSent,
       providerUsed,
+      feedbackId: feedbackDoc._id,
     });
   } catch (error) {
     console.error("Feedback submission error:", error);
     return res.status(500).json({ message: "Failed to submit feedback. Please try again." });
   }
+};
+
+/**
+ * Retrieves all stored user feedback entries (ordered by newest first)
+ * @route GET /api/feedback
+ */
+export const getAllFeedback = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 }).limit(100);
+    return res.json({ count: feedbacks.length, feedbacks });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Retrieves all stored user feedback entries (ordered by newest first)
+ * @route GET /api/feedback
+ */
+export const getAllFeedback = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find().sort({ createdAt: -1 }).limit(100);
+    return res.json({ count: feedbacks.length, feedbacks });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 };
