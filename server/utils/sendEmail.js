@@ -3,13 +3,15 @@ import nodemailer from "nodemailer";
 /**
  * Sends a high-contrast 6-digit OTP verification email.
  * Does not include auto-login sessions or verification links.
- * 
+ *
  * @param {string} email - Recipient email address
  * @param {string} otp - 6-digit numeric OTP code
  */
 export const sendVerificationOtpEmail = async (email, otp) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_PORT === "465",
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
