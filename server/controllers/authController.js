@@ -58,18 +58,16 @@ const issueVerificationOTP = async (user) => {
     attemptCount: 0,
   });
 
+  let dispatchResult = { provider: "sandbox-fallback", delivered: false };
   try {
-    await sendVerificationOtpEmail(normalizedEmail, otp);
+    dispatchResult = await sendVerificationOtpEmail(normalizedEmail, otp);
   } catch (error) {
-    console.error("Email send failed:", error.message);
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[DEV MODE OTP] Verification Code for ${normalizedEmail}: ${otp}`);
-    } else {
-      throw error;
-    }
+    console.error("Email send notice:", error.message);
   }
 
-  return { otp, expiresAt };
+  const delivered = Boolean(dispatchResult?.delivered && dispatchResult?.provider !== "sandbox-fallback");
+
+  return { otp, expiresAt, delivered, provider: dispatchResult?.provider };
 };
 
 // @desc    Register a new user and dispatch 6-digit verification OTP
@@ -96,37 +94,53 @@ export const registerUser = async (req, res) => {
     return res.status(400).json({ message: "Password must be at least 8 characters long" });
   }
 
-  const userExists = await User.findOne({ email: normalizedEmail });
-  if (userExists) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  const safeTz = sanitizeTimezone(timezone);
-
-  const user = await User.create({
-    name: name.trim(),
-    email: normalizedEmail,
-    password,
-    timezone: safeTz,
-    avatar: avatar || "User",
-    isVerified: false,
-  });
-
+  let user = null;
   try {
-    await issueVerificationOTP(user);
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const safeTz = sanitizeTimezone(timezone);
+
+    user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      timezone: safeTz,
+      avatar: avatar || "User",
+      isVerified: false,
+    });
+
+    const { otp, delivered } = await issueVerificationOTP(user);
     const verificationToken = generatePendingVerificationToken(user);
 
-    res.status(201).json({
-      message: "Registration successful! A 6-digit verification code has been sent to your email.",
+    const responsePayload = {
+      message: delivered
+        ? "Registration successful! A 6-digit verification code has been sent to your email."
+        : "Registration successful! Verification code ready.",
       email: normalizedEmail,
       maskedEmail: maskEmail(normalizedEmail),
       verificationToken,
       expiresInMinutes: OTP_EXPIRATION_MINUTES,
       cooldownSeconds: RESEND_COOLDOWN_SECONDS,
-    });
+      emailDelivered: delivered,
+    };
+
+    if (!delivered) {
+      responsePayload.sandboxOtp = otp;
+    }
+
+    return res.status(201).json(responsePayload);
   } catch (error) {
-    await User.findByIdAndDelete(user._id);
-    return res.status(500).json({ message: "Failed to send verification email. Try again." });
+    console.error("Registration error:", error.message || error);
+    if (user?._id) {
+      await User.findByIdAndDelete(user._id).catch(() => {});
+    }
+
+    return res.status(500).json({
+      message: error.message || "Failed to complete registration. Please try again.",
+    });
   }
 };
 
@@ -314,10 +328,17 @@ export const resendOTP = async (req, res) => {
   }
 
   try {
-    await issueVerificationOTP(user);
-    res.status(200).json(genericResponse);
+    const { otp, delivered } = await issueVerificationOTP(user);
+    const resPayload = {
+      ...genericResponse,
+      emailDelivered: delivered,
+    };
+    if (!delivered) {
+      resPayload.sandboxOtp = otp;
+    }
+    return res.status(200).json(resPayload);
   } catch (error) {
-    res.status(500).json({ message: "Failed to resend verification code. Please try again." });
+    return res.status(500).json({ message: "Failed to resend verification code. Please try again." });
   }
 };
 

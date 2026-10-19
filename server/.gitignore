@@ -1,0 +1,22 @@
+# Server dependencies
+node_modules/
+
+# Secrets & Environment variables
+.env
+*.env
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing, vitest & coverage
+coverage/
+.vitest/
+.vite/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+

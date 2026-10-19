@@ -54,12 +54,19 @@ export default function Auth() {
         if (res.data.verificationToken) {
           sessionStorage.setItem("pending_verification_token", res.data.verificationToken);
         }
+        if (res.data.sandboxOtp) {
+          sessionStorage.setItem("pending_verification_sandbox_otp", res.data.sandboxOtp);
+        } else {
+          sessionStorage.removeItem("pending_verification_sandbox_otp");
+        }
 
         // Redirect immediately to the dedicated 6-digit OTP verification screen
         navigate("/verify-email", {
           state: {
             email: normalizedEmail,
             maskedEmail: res.data.maskedEmail,
+            sandboxOtp: res.data.sandboxOtp,
+            emailDelivered: res.data.emailDelivered,
           },
         });
       }

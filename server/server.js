@@ -26,7 +26,14 @@ app.use(
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "http://localhost:5173", "http://localhost:5000", process.env.CLIENT_URL].filter(Boolean),
+        connectSrc: [
+          "'self'",
+          "http://localhost:5173",
+          "http://localhost:5000",
+          "https://habit-forge-1r4b.onrender.com",
+          "https://habit-forge-six-chi.vercel.app",
+          process.env.CLIENT_URL,
+        ].filter(Boolean),
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -40,6 +47,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://habit-forge-six-chi.vercel.app",
   "https://habit-forge-l6mnscsfu-web-app-f9b9.vercel.app",
+  "https://habit-forge-1r4b.onrender.com",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -47,7 +55,11 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/habit-forge.*\.vercel\.app$/.test(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error("Blocked by CORS policy"));

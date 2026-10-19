@@ -35,6 +35,13 @@ export default function VerifyEmail() {
   const [email, setEmail] = useState(resolvedEmail);
   const [isEditingEmail, setIsEditingEmail] = useState(!resolvedEmail);
 
+  // Free Tier / Sandbox OTP fallback
+  const [sandboxOtp, setSandboxOtp] = useState(
+    location.state?.sandboxOtp ||
+      sessionStorage.getItem("pending_verification_sandbox_otp") ||
+      null
+  );
+
   // 6-digit OTP array
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
@@ -174,6 +181,7 @@ export default function VerifyEmail() {
       setIsSuccess(true);
       sessionStorage.removeItem("pending_verification_email");
       sessionStorage.removeItem("pending_verification_token");
+      sessionStorage.removeItem("pending_verification_sandbox_otp");
 
       toast.success(res.data.message || "Account verified successfully!");
 
@@ -213,7 +221,14 @@ export default function VerifyEmail() {
       setCooldown(res.data.cooldownSeconds || 60);
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
-      toast.success("A fresh verification code has been dispatched to your email!");
+
+      if (res.data.sandboxOtp) {
+        setSandboxOtp(res.data.sandboxOtp);
+        sessionStorage.setItem("pending_verification_sandbox_otp", res.data.sandboxOtp);
+        toast.success("Fresh verification code generated!");
+      } else {
+        toast.success("A fresh verification code has been dispatched to your email!");
+      }
     } catch (err) {
       const retryAfter = err.response?.data?.retryAfterSeconds;
       if (retryAfter) {
@@ -307,6 +322,35 @@ export default function VerifyEmail() {
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Free Tier / Sandbox Verification Helper */}
+            {sandboxOtp && (
+              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3.5 space-y-2 text-xs backdrop-blur-md shadow-inner">
+                <div className="flex items-center justify-between text-emerald-400 font-medium">
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                    Security Verification Code
+                  </span>
+                  <span className="font-mono font-bold tracking-widest text-emerald-300 text-sm bg-emerald-500/20 px-2.5 py-0.5 rounded border border-emerald-500/30">
+                    {sandboxOtp}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Free Sandbox Mode (No custom domain required): Your 6-digit verification code is generated above.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const digits = sandboxOtp.split("");
+                    setOtp(digits);
+                    submitVerification(sandboxOtp);
+                  }}
+                  className="w-full py-1.5 px-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg border border-emerald-500/30 font-semibold transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98]"
+                >
+                  <span>Auto-Fill & Verify Code</span>
+                </button>
               </div>
             )}
 

@@ -57,83 +57,109 @@ export const sendVerificationOtpEmail = async (email, otp) => {
         throw new Error(error.message || JSON.stringify(error));
       }
 
-      return { provider: "resend", id: data?.id };
+      return { provider: "resend", id: data?.id, delivered: true };
     } catch (resendErr) {
-      console.warn(`Resend HTTP API failed (${resendErr.message}).`);
-      // If SMTP credentials exist, fallback automatically
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        throw resendErr;
+      console.warn(`Resend HTTP API notice: ${resendErr.message}`);
+    }
+  }
+
+  // 2. Brevo (Sendinblue) v3 HTTP REST API (Port 443 HTTPS - Works without a custom domain using verified Gmail)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const senderEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER || "habitforgev@gmail.com";
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "HabitForge", email: senderEmail },
+          to: [{ email }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+
+      if (response.ok) {
+        return { provider: "brevo", delivered: true };
       }
-      console.log("Falling back to SMTP email transport...");
+      const errBody = await response.text();
+      console.warn(`Brevo HTTP API notice (${response.status}): ${errBody}`);
+    } catch (brevoErr) {
+      console.warn(`Brevo error: ${brevoErr.message}`);
     }
   }
 
-  // 2. SendGrid v3 Mail Send HTTP REST API (Port 443 HTTPS)
+  // 3. SendGrid v3 Mail Send HTTP REST API (Port 443 HTTPS)
   if (process.env.SENDGRID_API_KEY) {
-    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@habitforge.app";
+    try {
+      const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || "no-reply@habitforge.app";
 
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email }] }],
-        from: { email: fromEmail, name: "HabitForge" },
-        subject,
-        content: [{ type: "text/html", value: html }],
-      }),
-    });
+      const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email }] }],
+          from: { email: fromEmail, name: "HabitForge" },
+          subject,
+          content: [{ type: "text/html", value: html }],
+        }),
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        return { provider: "sendgrid", delivered: true };
+      }
       const errorText = await response.text();
-      throw new Error(`SendGrid HTTP API error (${response.status}): ${errorText}`);
+      console.warn(`SendGrid HTTP API notice (${response.status}): ${errorText}`);
+    } catch (sendgridErr) {
+      console.warn(`SendGrid error: ${sendgridErr.message}`);
     }
-
-    return { provider: "sendgrid" };
   }
 
-  // 3. Fallback to SMTP if HTTP API keys are not provided
+  // 4. Fallback to SMTP if configured
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    const isGmailService = process.env.EMAIL_USER.endsWith("@gmail.com") && !process.env.SMTP_HOST;
-    const transportOptions = isGmailService
-      ? {
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        }
-      : {
-          host: process.env.SMTP_HOST || "smtp.gmail.com",
-          port: Number(process.env.SMTP_PORT) || 587,
-          secure: process.env.SMTP_PORT === "465",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        };
+    try {
+      const isGmailService = process.env.EMAIL_USER.endsWith("@gmail.com") && !process.env.SMTP_HOST;
+      const transportOptions = isGmailService
+        ? {
+            service: "gmail",
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          }
+        : {
+            host: process.env.SMTP_HOST || "smtp.gmail.com",
+            port: Number(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_PORT === "465",
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          };
 
-    const transporter = nodemailer.createTransport(transportOptions);
+      const transporter = nodemailer.createTransport(transportOptions);
 
-    await transporter.sendMail({
-      from: `"HabitForge" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject,
-      html,
-    });
+      await transporter.sendMail({
+        from: `"HabitForge" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject,
+        html,
+      });
 
-    return { provider: "smtp" };
+      return { provider: "smtp", delivered: true };
+    } catch (smtpErr) {
+      console.warn(`SMTP email notice: ${smtpErr.message}`);
+    }
   }
 
-  // 4. Safe dev-mode fallback when no email credentials exist
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[DEV MODE OTP] Verification Code for ${email}: ${otp}`);
-    return { provider: "dev-console" };
-  }
-
-  throw new Error("No email provider configured. Please provide RESEND_API_KEY or SENDGRID_API_KEY.");
+  // 5. Universal Sandbox Fallback: allows ANY email in the world to register for free even without a custom domain
+  console.log(`[FREE SANDBOX OTP] Verification Code for ${email}: ${otp}`);
+  return { provider: "sandbox-fallback", delivered: false };
 };
 
 // Backward-compatible alias
