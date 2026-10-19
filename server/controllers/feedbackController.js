@@ -184,17 +184,3 @@ export const getAllFeedback = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
-/**
- * Retrieves all stored user feedback entries (ordered by newest first)
- * @route GET /api/feedback
- */
-export const getAllFeedback = async (req, res) => {
-  try {
-    const feedbacks = await Feedback.find().sort({ createdAt: -1 }).limit(100);
-    return res.json({ count: feedbacks.length, feedbacks });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
-};
