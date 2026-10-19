@@ -54,6 +54,10 @@ const habitSchema = new mongoose.Schema(
       enum: ["General", "Health", "Coding", "Study", "Mindset"],
       default: "General",
     },
+    lastReminderSentAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
