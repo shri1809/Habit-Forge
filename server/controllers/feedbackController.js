@@ -17,7 +17,9 @@ export const submitFeedback = async (req, res) => {
     const senderEmail = email?.trim() || req.user?.email || "anonymous@habitforge.app";
     const senderName = name?.trim() || req.user?.name || "HabitForge User";
     const safeRating = Number(rating) >= 1 && Number(rating) <= 5 ? Number(rating) : 5;
-    const safeCategory = category || "general";
+    
+    const validCategories = ["general", "feature_request", "bug_report", "praise"];
+    const safeCategory = validCategories.includes(category) ? category : "general";
 
     // 1. Store feedback in MongoDB database
     const feedbackDoc = await Feedback.create({
@@ -31,7 +33,7 @@ export const submitFeedback = async (req, res) => {
 
     // 2. Prepare HTML Email for habitforgev@gmail.com
     const stars = "⭐".repeat(safeRating);
-    const emailSubject = `[HabitForge Feedback] ${safeCategory.toUpperCase()} from ${senderName}`;
+    const emailSubject = `[HabitForge Feedback] ${safeCategory.toUpperCase().replace("_", " ")} from ${senderName}`;
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #020617; color: #f8fafc; padding: 32px 24px; border-radius: 16px; max-width: 560px; margin: 0 auto; border: 1px solid #1e293b;">
         <div style="border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px;">
@@ -70,27 +72,72 @@ export const submitFeedback = async (req, res) => {
     // 3. Dispatch Email to habitforgev@gmail.com
     const targetRecipient = "habitforgev@gmail.com";
     let emailSent = false;
+    let providerUsed = null;
 
-    // Try Resend HTTP API (Port 443)
-    if (process.env.RESEND_API_KEY) {
+    // Method 1 (PRIMARY): Direct Gmail SMTP (Guaranteed Primary Inbox delivery to habitforgev@gmail.com)
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        const isGmail = process.env.EMAIL_USER.endsWith("@gmail.com") && !process.env.SMTP_HOST;
+        const transportOptions = isGmail
+          ? {
+              service: "gmail",
+              auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+              },
+            }
+          : {
+              host: process.env.SMTP_HOST || "smtp.gmail.com",
+              port: Number(process.env.SMTP_PORT) || 587,
+              secure: process.env.SMTP_PORT === "465",
+              auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+              },
+            };
+
+        const transporter = nodemailer.createTransport(transportOptions);
+        await transporter.sendMail({
+          from: `"HabitForge Feedback" <${process.env.EMAIL_USER}>`,
+          to: targetRecipient,
+          subject: emailSubject,
+          html: emailHtml,
+        });
+
+        emailSent = true;
+        providerUsed = "gmail-smtp";
+      } catch (smtpErr) {
+        console.warn("Feedback SMTP Notice:", smtpErr.message);
+      }
+    }
+
+    // Method 2 (FALLBACK): Resend HTTP API (Port 443 HTTPS)
+    if (!emailSent && process.env.RESEND_API_KEY) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         const fromAddress = process.env.EMAIL_FROM || "HabitForge <onboarding@resend.dev>";
-        await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: fromAddress,
           to: targetRecipient,
           subject: emailSubject,
           html: emailHtml,
         });
-        emailSent = true;
+
+        if (error) {
+          console.warn("Feedback Resend Notice:", error.message || error);
+        } else {
+          emailSent = true;
+          providerUsed = "resend";
+        }
       } catch (err) {
-        console.warn("Feedback Resend Notice:", err.message);
+        console.warn("Feedback Resend Error:", err.message);
       }
     }
 
-    // Try Brevo HTTP API (Port 443) fallback
+    // Method 3 (FALLBACK): Brevo HTTP API (Port 443 HTTPS)
     if (!emailSent && process.env.BREVO_API_KEY) {
       try {
+        const senderEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER || "habitforgev@gmail.com";
         const response = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",
           headers: {
@@ -98,37 +145,21 @@ export const submitFeedback = async (req, res) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            sender: { name: "HabitForge Feedback", email: "habitforgev@gmail.com" },
+            sender: { name: "HabitForge Feedback", email: senderEmail },
             to: [{ email: targetRecipient }],
             subject: emailSubject,
             htmlContent: emailHtml,
           }),
         });
-        if (response.ok) emailSent = true;
+        if (response.ok) {
+          emailSent = true;
+          providerUsed = "brevo";
+        } else {
+          const errBody = await response.text();
+          console.warn(`Feedback Brevo notice (${response.status}):`, errBody);
+        }
       } catch (err) {
-        console.warn("Feedback Brevo Notice:", err.message);
-      }
-    }
-
-    // Try SMTP fallback
-    if (!emailSent && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      try {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        });
-        await transporter.sendMail({
-          from: `"HabitForge" <${process.env.EMAIL_USER}>`,
-          to: targetRecipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-        emailSent = true;
-      } catch (err) {
-        console.warn("Feedback SMTP Notice:", err.message);
+        console.warn("Feedback Brevo Error:", err.message);
       }
     }
 
@@ -141,6 +172,7 @@ export const submitFeedback = async (req, res) => {
       message: "Thank you! Your feedback has been received and forwarded to the HabitForge team.",
       saved: true,
       emailSent,
+      providerUsed,
     });
   } catch (error) {
     console.error("Feedback submission error:", error);
