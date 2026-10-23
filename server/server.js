@@ -1,5 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import helmet from "helmet";
 import connectDB from "./config/db.js";
@@ -10,7 +12,9 @@ import { apiLimiter } from "./middleware/rateLimiter.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import { startReminderScheduler } from "./services/reminderService.js";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 // Connect to MongoDB (skip during test execution if handled by in-memory or mocked)
 if (process.env.NODE_ENV !== "test") {

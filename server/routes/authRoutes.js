@@ -6,6 +6,8 @@ import {
   verifyOTP,
   resendOTP,
   verifyEmail,
+  forgotPassword,
+  resetPasswordWithOTP,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
@@ -14,6 +16,10 @@ const router = express.Router();
 
 router.post("/register", authLimiter, registerUser);
 router.post("/login", authLimiter, loginUser);
+
+// Password Reset via OTP endpoints
+router.post("/forgot-password", authLimiter, forgotPassword);
+router.post("/reset-password", authLimiter, resetPasswordWithOTP);
 
 // OTP Verification endpoints (supporting both naming conventions)
 router.post("/verify-email-otp", authLimiter, verifyOTP);

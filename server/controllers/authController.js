@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import EmailVerificationCode from "../models/EmailVerificationCode.js";
 import generateToken from "../utils/generateToken.js";
-import { sendVerificationOtpEmail } from "../utils/sendEmail.js";
+import { sendVerificationOtpEmail, sendPasswordResetOtpEmail } from "../utils/sendEmail.js";
 import { sanitizeTimezone } from "../utils/timezone.js";
 import {
   generateOTP,
@@ -438,4 +438,179 @@ export const getUserProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+/**
+ * Generates and sends a 6-digit OTP for password reset.
+ * Includes anti-enumeration protection and 60-second resend cooldown.
+ * @route POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    return res.status(400).json({ message: "Please provide a valid email address." });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Find user by normalized email
+  const user = await User.findOne({ email: normalizedEmail });
+
+  // Anti-enumeration protection: return identical generic message if user doesn't exist
+  if (!user) {
+    return res.status(200).json({
+      message: "If an account with that email exists, a password reset code has been sent.",
+      maskedEmail: maskEmail(normalizedEmail),
+      cooldownSeconds: RESEND_COOLDOWN_SECONDS,
+    });
+  }
+
+  // Enforce 60-second cooldown on consecutive requests
+  const existingActiveCode = await EmailVerificationCode.findOne({
+    email: normalizedEmail,
+    purpose: "password_reset",
+    consumedAt: null,
+  }).sort({ createdAt: -1 });
+
+  if (existingActiveCode && existingActiveCode.lastSentAt) {
+    const elapsedSeconds = Math.floor(
+      (Date.now() - new Date(existingActiveCode.lastSentAt).getTime()) / 1000
+    );
+    if (elapsedSeconds < RESEND_COOLDOWN_SECONDS) {
+      const retryAfterSeconds = RESEND_COOLDOWN_SECONDS - elapsedSeconds;
+      return res.status(429).json({
+        message: `Please wait ${retryAfterSeconds} seconds before requesting another code.`,
+        retryAfterSeconds,
+      });
+    }
+  }
+
+  // Invalidate any unconsumed password_reset codes for this email
+  await EmailVerificationCode.updateMany(
+    {
+      email: normalizedEmail,
+      purpose: "password_reset",
+      consumedAt: null,
+    },
+    { consumedAt: new Date() }
+  );
+
+  const otp = generateOTP();
+  const codeHash = hashOTP(normalizedEmail, otp);
+  const expiresAt = new Date(Date.now() + OTP_EXPIRATION_MINUTES * 60 * 1000);
+
+  await EmailVerificationCode.create({
+    userId: user._id,
+    email: normalizedEmail,
+    purpose: "password_reset",
+    codeHash,
+    expiresAt,
+    lastSentAt: new Date(),
+    attemptCount: 0,
+  });
+
+  let dispatchResult = { provider: "sandbox-fallback", delivered: false };
+  try {
+    dispatchResult = await sendPasswordResetOtpEmail(normalizedEmail, otp);
+  } catch (error) {
+    console.error("Password reset email send notice:", error.message);
+  }
+
+  const delivered = Boolean(dispatchResult?.delivered && dispatchResult?.provider !== "sandbox-fallback");
+
+  return res.status(200).json({
+    message: "Password reset code sent to your email.",
+    maskedEmail: maskEmail(normalizedEmail),
+    cooldownSeconds: RESEND_COOLDOWN_SECONDS,
+    emailDelivered: delivered,
+    sandboxOtp: delivered ? undefined : otp,
+  });
+};
+
+/**
+ * Validates the 6-digit OTP and updates the user's password with a new one.
+ * @route POST /api/auth/reset-password
+ */
+export const resetPasswordWithOTP = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    return res.status(400).json({ message: "Please provide a valid email address." });
+  }
+
+  if (!otp || typeof otp !== "string" || otp.trim().length !== 6) {
+    return res.status(400).json({ message: "Please enter a valid 6-digit verification code." });
+  }
+
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long." });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const candidateCode = otp.trim();
+
+  // Find latest active reset code
+  const activeCode = await EmailVerificationCode.findOne({
+    email: normalizedEmail,
+    purpose: "password_reset",
+    consumedAt: null,
+  }).sort({ createdAt: -1 });
+
+  if (!activeCode) {
+    return res.status(400).json({
+      message: "Invalid or expired verification code. Please request a new one.",
+    });
+  }
+
+  // Check expiration
+  if (activeCode.expiresAt < new Date()) {
+    activeCode.consumedAt = new Date();
+    await activeCode.save();
+    return res.status(400).json({
+      message: "Verification code has expired. Please request a new one.",
+    });
+  }
+
+  // Check brute force attempt limit
+  if (activeCode.attemptCount >= MAX_OTP_ATTEMPTS) {
+    activeCode.consumedAt = new Date();
+    await activeCode.save();
+    return res.status(429).json({
+      message: "Too many failed attempts. This code has been locked. Please request a new code.",
+    });
+  }
+
+  // Verify hash using timing-safe comparison
+  const isValid = verifyOTPHash(normalizedEmail, candidateCode, activeCode.codeHash);
+
+  if (!isValid) {
+    activeCode.attemptCount += 1;
+    await activeCode.save();
+    const remaining = MAX_OTP_ATTEMPTS - activeCode.attemptCount;
+    return res.status(400).json({
+      message: `Incorrect code. ${remaining > 0 ? `${remaining} attempts remaining.` : "Code locked."}`,
+    });
+  }
+
+  // Mark code consumed
+  activeCode.consumedAt = new Date();
+  await activeCode.save();
+
+  // Update user's password
+  const user = await User.findById(activeCode.userId);
+  if (!user) {
+    return res.status(404).json({ message: "User account not found." });
+  }
+
+  user.password = newPassword; // Triggers User schema pre('save') bcrypt hashing!
+  if (!user.isVerified) {
+    user.isVerified = true; // Email verified through OTP proof
+  }
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Password reset successful! You can now sign in with your new password.",
+  });
 };

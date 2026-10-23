@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Button from "../components/ui/Button";
 import useSEO from "../hooks/useSEO";
+import ForgotPasswordModal from "../components/ForgotPasswordModal";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +15,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -162,9 +164,20 @@ export default function Auth() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-300 uppercase">
+                Password
+              </label>
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotOpen(true)}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold transition-colors focus:outline-none"
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -220,6 +233,17 @@ export default function Auth() {
             )}
           </Button>
         </div>
+
+        <ForgotPasswordModal
+          isOpen={isForgotOpen}
+          defaultEmail={email}
+          onClose={() => setIsForgotOpen(false)}
+          onSuccess={(updatedEmail) => {
+            setEmail(updatedEmail);
+            setPassword("");
+            setIsLogin(true);
+          }}
+        />
       </main>
     </div>
   );

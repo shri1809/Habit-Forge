@@ -270,5 +270,45 @@ export const sendHabitReminderEmail = async ({ email, userName, habits, dashboar
   return await dispatchEmail({ to: email, subject, html });
 };
 
+/**
+ * Returns the HTML email template for 6-digit Password Reset OTP verification.
+ *
+ * @param {string} otp - 6-digit numeric OTP code
+ * @returns {string} HTML markup
+ */
+export const getPasswordResetOtpHtml = (otp) => `
+  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 32px 24px; border-radius: 16px; max-width: 520px; margin: 0 auto; border: 1px solid #1e293b;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h1 style="color: #10b981; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Habit<span style="color: #ffffff;">Forge</span></h1>
+      <p style="color: #94a3b8; font-size: 14px; margin-top: 6px;">Password Reset Request</p>
+    </div>
+
+    <div style="background-color: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; text-align: center;">
+      <p style="margin: 0 0 12px 0; font-size: 14px; color: #cbd5e1;">Your 6-digit password reset code is:</p>
+      <div style="background-color: #0f172a; border: 1px solid #10b981; border-radius: 8px; padding: 14px 20px; display: inline-block; margin: 8px 0 16px 0;">
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #10b981; display: inline-block;">${otp}</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #94a3b8;">This code expires in <strong style="color: #f8fafc;">10 minutes</strong>.</p>
+    </div>
+
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #1e293b; font-size: 12px; color: #64748b; line-height: 1.5;">
+      <p style="margin: 0 0 8px 0;"><strong>Security Notice:</strong> Never share this code with anyone. If you did not request a password reset, you can safely ignore this email—your password will remain unchanged.</p>
+      <p style="margin: 0;">Sent with 🛡️ from HabitForge Security</p>
+    </div>
+  </div>
+`;
+
+/**
+ * Dispatches password reset OTP emails.
+ *
+ * @param {string} email - Recipient email address
+ * @param {string} otp - 6-digit numeric OTP code
+ */
+export const sendPasswordResetOtpEmail = async (email, otp) => {
+  const subject = "Your HabitForge Password Reset Code";
+  const html = getPasswordResetOtpHtml(otp);
+  return await dispatchEmail({ to: email, subject, html });
+};
+
 // Backward-compatible alias
 export const sendVerificationEmail = sendVerificationOtpEmail;
