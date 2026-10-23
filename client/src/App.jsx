@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import VerifyEmail from "./pages/VerifyEmail";
+import Home from "./pages/Home";
 import Header from "./components/Header";
 
 const ProtectedRoute = ({ children }) => {
@@ -68,6 +69,7 @@ export default function App() {
       />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route
             path="/auth"
             element={
@@ -85,8 +87,7 @@ export default function App() {
             }
           />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/auth" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

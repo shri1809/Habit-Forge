@@ -36,7 +36,7 @@ export default function Header() {
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left Side: Logo and Brand */}
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-2.5 group">
           <img 
             src={logo} 
             alt="HabitForge — Gamified Habit Tracker" 

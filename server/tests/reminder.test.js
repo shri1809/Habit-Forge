@@ -58,27 +58,25 @@ describe("18-Hour Habit Reminder Email Templates & Dispatcher", () => {
 });
 
 describe("18-Hour Habit Reminder Evaluation Service", () => {
-  const now = new Date("2026-10-19T12:00:00Z");
-
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
   it("skips habits that were created less than 18 hours ago", async () => {
     const mockUser = {
-      _id: "user123",
+      _id: "6ad5fc596032f50f56702001",
       email: "user@test.com",
       name: "User One",
       timezone: "UTC",
     };
 
-    // Created only 5 hours ago
+    // Created only 5 hours ago relative to current run time
     const mockRecentHabit = {
-      _id: "habit1",
+      _id: "6ad5fc596032f50f56702002",
       user: mockUser,
       title: "Drink Water",
       category: "Health",
-      createdAt: new Date(now.getTime() - 5 * 60 * 60 * 1000), // 5 hours old
+      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours old
       isArchived: false,
       lastReminderSentAt: null,
       lastCompletedPeriod: null,
@@ -95,7 +93,7 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
   it("skips habits that were already checked in for today's active period", async () => {
     const mockUser = {
-      _id: "user123",
+      _id: "6ad5fc596032f50f56702001",
       email: "user@test.com",
       name: "User One",
       timezone: "UTC",
@@ -103,12 +101,12 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
     // Created 20 hours ago, but already completed today
     const mockCompletedHabit = {
-      _id: "habit2",
+      _id: "6ad5fc596032f50f56702003",
       user: mockUser,
       title: "Morning Run",
       category: "Health",
       frequency: "daily",
-      createdAt: new Date(now.getTime() - 20 * 60 * 60 * 1000), // 20 hours old
+      createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000), // 20 hours old
       isArchived: false,
       lastReminderSentAt: null,
       // Will match current UTC period
@@ -125,7 +123,7 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
   it("skips habits where a reminder was already sent in the last 24 hours", async () => {
     const mockUser = {
-      _id: "user123",
+      _id: "6ad5fc596032f50f56702001",
       email: "user@test.com",
       name: "User One",
       timezone: "UTC",
@@ -133,11 +131,11 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
     // Created 24 hours ago, but reminder sent 2 hours ago
     const mockRemindedHabit = {
-      _id: "habit3",
+      _id: "6ad5fc596032f50f56702004",
       user: mockUser,
       title: "Write Code",
       category: "Coding",
-      createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       isArchived: false,
       lastReminderSentAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
       lastCompletedPeriod: null,
@@ -153,7 +151,7 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
   it("identifies habits overdue by >18 hours and dispatches reminders", async () => {
     const mockUser = {
-      _id: "user999",
+      _id: "6ad5fc596032f50f56702001",
       email: "overdue@test.com",
       name: "Overdue User",
       timezone: "UTC",
@@ -161,7 +159,7 @@ describe("18-Hour Habit Reminder Evaluation Service", () => {
 
     // Created 19 hours ago, never completed, never reminded
     const mockOverdueHabit = {
-      _id: "habitOverdue",
+      _id: "6ad5fc596032f50f56702005",
       user: mockUser,
       title: "Evening Yoga",
       category: "Health",
