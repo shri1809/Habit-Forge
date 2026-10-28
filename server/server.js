@@ -22,6 +22,7 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 const app = express();
+app.disable("x-powered-by");
 
 // HTTP Security Headers via Helmet
 app.use(

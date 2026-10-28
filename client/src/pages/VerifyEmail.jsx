@@ -35,11 +35,13 @@ export default function VerifyEmail() {
   const [email, setEmail] = useState(resolvedEmail);
   const [isEditingEmail, setIsEditingEmail] = useState(!resolvedEmail);
 
-  // Free Tier / Sandbox OTP fallback
+  // Free Tier / Sandbox OTP fallback (strictly active in development only)
   const [sandboxOtp, setSandboxOtp] = useState(
-    location.state?.sandboxOtp ||
-      sessionStorage.getItem("pending_verification_sandbox_otp") ||
-      null
+    import.meta.env.DEV
+      ? location.state?.sandboxOtp ||
+          sessionStorage.getItem("pending_verification_sandbox_otp") ||
+          null
+      : null
   );
 
   // 6-digit OTP array
@@ -222,7 +224,7 @@ export default function VerifyEmail() {
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
 
-      if (res.data.sandboxOtp) {
+      if (import.meta.env.DEV && res.data.sandboxOtp) {
         setSandboxOtp(res.data.sandboxOtp);
         sessionStorage.setItem("pending_verification_sandbox_otp", res.data.sandboxOtp);
         toast.success("Fresh verification code generated!");
@@ -325,8 +327,8 @@ export default function VerifyEmail() {
               </div>
             )}
 
-            {/* Free Tier / Sandbox Verification Helper */}
-            {sandboxOtp && (
+            {/* Free Tier / Sandbox Verification Helper (Dev only) */}
+            {import.meta.env.DEV && sandboxOtp && (
               <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3.5 space-y-2 text-xs backdrop-blur-md shadow-inner">
                 <div className="flex items-center justify-between text-emerald-400 font-medium">
                   <span className="flex items-center gap-1.5 font-semibold">

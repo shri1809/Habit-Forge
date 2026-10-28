@@ -57,7 +57,7 @@ export default function Auth() {
         if (res.data.verificationToken) {
           sessionStorage.setItem("pending_verification_token", res.data.verificationToken);
         }
-        if (res.data.sandboxOtp) {
+        if (import.meta.env.DEV && res.data.sandboxOtp) {
           sessionStorage.setItem("pending_verification_sandbox_otp", res.data.sandboxOtp);
         } else {
           sessionStorage.removeItem("pending_verification_sandbox_otp");
@@ -68,7 +68,7 @@ export default function Auth() {
           state: {
             email: normalizedEmail,
             maskedEmail: res.data.maskedEmail,
-            sandboxOtp: res.data.sandboxOtp,
+            sandboxOtp: import.meta.env.DEV ? res.data.sandboxOtp : undefined,
             emailDelivered: res.data.emailDelivered,
           },
         });

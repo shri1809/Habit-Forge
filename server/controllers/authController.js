@@ -127,7 +127,7 @@ export const registerUser = async (req, res) => {
       emailDelivered: delivered,
     };
 
-    if (!delivered) {
+    if (!delivered && process.env.NODE_ENV === "development" && process.env.ALLOW_SANDBOX_OTP === "true") {
       responsePayload.sandboxOtp = otp;
     }
 
@@ -333,7 +333,7 @@ export const resendOTP = async (req, res) => {
       ...genericResponse,
       emailDelivered: delivered,
     };
-    if (!delivered) {
+    if (!delivered && process.env.NODE_ENV === "development" && process.env.ALLOW_SANDBOX_OTP === "true") {
       resPayload.sandboxOtp = otp;
     }
     return res.status(200).json(resPayload);
@@ -524,7 +524,7 @@ export const forgotPassword = async (req, res) => {
     maskedEmail: maskEmail(normalizedEmail),
     cooldownSeconds: RESEND_COOLDOWN_SECONDS,
     emailDelivered: delivered,
-    sandboxOtp: delivered ? undefined : otp,
+    sandboxOtp: (!delivered && process.env.NODE_ENV === "development" && process.env.ALLOW_SANDBOX_OTP === "true") ? otp : undefined,
   });
 };
 

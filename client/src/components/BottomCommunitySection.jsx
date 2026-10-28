@@ -18,7 +18,10 @@ export default function BottomCommunitySection() {
 
   // Invite Link State
   const [copied, setCopied] = useState(false);
-  const inviteUrl = "https://habit-forge-six-chi.vercel.app";
+  const inviteUrl =
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "https://habit-forge-six-chi.vercel.app";
 
   const handleCopyInvite = async () => {
     try {

@@ -20,6 +20,12 @@ const router = express.Router();
 router.get("/cron/reminders", async (req, res) => {
   const cronSecret = process.env.CRON_SECRET;
   if (
+    process.env.NODE_ENV === "production" &&
+    (!cronSecret || (req.headers["x-cron-secret"] !== cronSecret && req.query.secret !== cronSecret))
+  ) {
+    return res.status(401).json({ message: "Unauthorized cron request" });
+  }
+  if (
     cronSecret &&
     req.headers["x-cron-secret"] !== cronSecret &&
     req.query.secret !== cronSecret
