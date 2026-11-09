@@ -1,9 +1,9 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { format, startOfWeek, subWeeks, addDays } from "date-fns";
 import { Zap, Flame, Target, Trophy } from "lucide-react";
 import API from "../api/axios";
 
-// HabitForge Emerald Glass Theme Colors
+// HabitForge Emerald Theme Colors (High contrast, zero GPU blur overhead)
 const THEME_COLORS = {
   level0: "#0f172a", // Slate-900 (empty day)
   level0Stroke: "rgba(255, 255, 255, 0.08)",
@@ -18,7 +18,7 @@ const THEME_COLORS = {
   textMuted: "#94a3b8", // Slate 400
 };
 
-// Period-specific dimensions so 3 Months has generous, prominent squares!
+// Period-specific dimensions: 3 Months is prominent and bold!
 const RANGES = [
   {
     id: "3m",
@@ -62,22 +62,30 @@ export default function ActivityHeatmap() {
   const [historyMap, setHistoryMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeRange, setActiveRange] = useState("3m"); // Default to 3 months
-  const [tooltip, setTooltip] = useState(null); // { x, y, count, dateStr }
-  const containerRef = useRef(null);
+
+  // High-performance DOM ref for tooltip: ZERO React re-renders on mousemove
+  const tooltipRef = useRef(null);
+  const svgWrapperRef = useRef(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchHistory = async () => {
       try {
         const { data } = await API.get("/habits/history");
-        setHistoryMap(data.historyMap || {});
+        if (isMounted) {
+          setHistoryMap(data.historyMap || {});
+        }
       } catch (err) {
         console.error("Failed to fetch completion history:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchHistory();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const selectedRange = RANGES.find((r) => r.id === activeRange) || RANGES[0];
@@ -96,7 +104,6 @@ export default function ActivityHeatmap() {
 
   /**
    * Build the week columns array starting from Sunday numWeeks ago through today.
-   * Matches 7-day Sunday-to-Saturday columns with Mon/Wed/Fri labels.
    */
   const {
     weeks,
@@ -111,9 +118,7 @@ export default function ActivityHeatmap() {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    // Current week's Sunday
     const currentSunday = startOfWeek(today, { weekStartsOn: 0 }); // 0 = Sunday
-    // Start Sunday numWeeks ago
     const startSunday = subWeeks(currentSunday, numWeeks - 1);
 
     const weekCols = [];
@@ -122,7 +127,6 @@ export default function ActivityHeatmap() {
     let activeDays = 0;
     let pastDays = 0;
 
-    // Streak tracking within period
     let currentStreakCount = 0;
     let maxStreakCount = 0;
 
@@ -162,7 +166,6 @@ export default function ActivityHeatmap() {
       weekCols.push(days);
     }
 
-    // Month label positions (place label above the first column where a new month starts)
     const labels = [];
     let lastMonth = "";
     weekCols.forEach((week, colIdx) => {
@@ -211,32 +214,35 @@ export default function ActivityHeatmap() {
   const svgWidth = LEFT_PAD + numWeeks * pitch + 10;
   const svgHeight = TOP_PAD + 7 * pitch + 6;
 
-  const handleCellMouseEnter = (day, e) => {
-    if (day.isFuture) return;
-    const rect = e.target.getBoundingClientRect();
-    const containerRect = containerRef.current
-      ? containerRef.current.getBoundingClientRect()
-      : { left: 0, top: 0 };
+  // Ultra-fast hardware-accelerated tooltip without React state updates
+  const handleCellMouseEnter = useCallback(
+    (day, colIdx, dayIndex) => {
+      if (day.isFuture || !tooltipRef.current) return;
+      const x = LEFT_PAD + colIdx * pitch + CELL_SIZE / 2;
+      const y = TOP_PAD + dayIndex * pitch - 6;
 
-    setTooltip({
-      x: rect.left - containerRect.left + rect.width / 2,
-      y: rect.top - containerRect.top - 8,
-      count: day.count,
-      dateStr: day.formattedDate,
-    });
-  };
+      const countText = `${day.count} ${day.count === 1 ? "check-in" : "check-ins"}`;
+      tooltipRef.current.innerHTML = `
+        <div class="font-bold text-emerald-400 font-mono text-xs">${countText}</div>
+        <div class="text-[11px] text-slate-300 mt-0.5">${day.formattedDate}</div>
+        <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900"></div>
+      `;
+      tooltipRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -100%)`;
+      tooltipRef.current.style.opacity = "1";
+    },
+    [CELL_SIZE, LEFT_PAD, TOP_PAD, pitch]
+  );
 
-  const handleCellMouseLeave = () => {
-    setTooltip(null);
-  };
+  const handleCellMouseLeave = useCallback(() => {
+    if (tooltipRef.current) {
+      tooltipRef.current.style.opacity = "0";
+    }
+  }, []);
 
   const isThreeMonths = activeRange === "3m";
 
   return (
-    <div
-      ref={containerRef}
-      className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] relative text-slate-100"
-    >
+    <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.08)] relative text-slate-100">
       {/* Header: Title, Subtitle, and Range Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
         <div>
@@ -264,9 +270,9 @@ export default function ActivityHeatmap() {
                 type="button"
                 onClick={() => {
                   setActiveRange(range.id);
-                  setTooltip(null);
+                  handleCellMouseLeave();
                 }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                   isActive
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -289,9 +295,12 @@ export default function ActivityHeatmap() {
             isThreeMonths ? "lg:flex-row lg:items-start justify-between" : ""
           } gap-6`}
         >
-          {/* Calendar SVG Container */}
-          <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 bg-slate-950/70 border border-white/5 rounded-xl p-4 sm:p-5 backdrop-blur-md flex-1">
-            <div className="min-w-fit flex justify-start sm:justify-center py-1">
+          {/* Calendar SVG Container — solid dark background without nested blur for 120 FPS rendering */}
+          <div
+            ref={svgWrapperRef}
+            className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800 bg-slate-950/90 border border-white/10 rounded-xl p-4 sm:p-5 flex-1 shadow-inner relative"
+          >
+            <div className="min-w-fit flex justify-start sm:justify-center py-1 relative">
               <svg
                 width={svgWidth}
                 height={svgHeight}
@@ -373,8 +382,8 @@ export default function ActivityHeatmap() {
                           fill={fill}
                           stroke={stroke}
                           strokeWidth="1"
-                          className="transition-all duration-150 hover:stroke-white hover:scale-105 cursor-pointer origin-center"
-                          onMouseEnter={(e) => handleCellMouseEnter(day, e)}
+                          className="cursor-pointer hover:stroke-white hover:stroke-[1.5px] transition-colors"
+                          onMouseEnter={() => handleCellMouseEnter(day, colIdx, day.dayIndex)}
                           onMouseLeave={handleCellMouseLeave}
                         >
                           <title>
@@ -388,10 +397,17 @@ export default function ActivityHeatmap() {
                   </g>
                 ))}
               </svg>
+
+              {/* Floating Zero-Lag Tooltip via Direct DOM Ref */}
+              <div
+                ref={tooltipRef}
+                className="absolute top-0 left-0 pointer-events-none bg-slate-900 border border-emerald-500/40 rounded-xl px-3 py-1.5 shadow-[0_10px_25px_rgba(0,0,0,0.6)] whitespace-nowrap opacity-0 transition-opacity duration-75 z-40"
+                style={{ willChange: "transform, opacity" }}
+              />
             </div>
           </div>
 
-          {/* Quick Consistency Stat Badges for Period (Balances and fills container in 3-Month mode) */}
+          {/* Quick Consistency Stat Badges for Period */}
           <div
             className={`grid grid-cols-2 ${
               isThreeMonths ? "lg:w-72 shrink-0" : "w-full sm:grid-cols-4"
@@ -443,22 +459,6 @@ export default function ActivityHeatmap() {
               <span className="text-[10px] text-slate-500 mt-0.5">habits / active day</span>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Floating Tooltip */}
-      {tooltip && (
-        <div
-          className="absolute z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full bg-slate-900/95 backdrop-blur-md text-white text-xs px-3 py-2 rounded-xl border border-emerald-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] whitespace-nowrap"
-          style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}
-        >
-          <div className="flex items-center gap-1.5 font-bold text-emerald-400 font-mono">
-            <span>
-              {tooltip.count} {tooltip.count === 1 ? "check-in" : "check-ins"}
-            </span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">{tooltip.dateStr}</div>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900/95" />
         </div>
       )}
 
