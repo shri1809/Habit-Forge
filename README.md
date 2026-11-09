@@ -58,7 +58,7 @@
 - 🏆 **Gamified streaks** — XP, RPG levelling, streak freezes, achievement badges
 - 📅 **Timezone-aware tracking** — daily/weekly habits keyed to the user's local calendar day
 - 🔔 **18-hour inactivity reminders** — scheduled email alerts for missed check-ins
-- 📊 **Analytics** — 90-day completion heatmap, category breakdown, best-streak summary
+- 📊 **Analytics** — 90-day completion heatmap (GitHub-style grid), category breakdown, best-streak summary
 - 📤 **Data export** — JSON (full profile dump) and CSV (habit + completion log)
 - 🌐 **PWA-ready** — `manifest.json`, service-worker-ready, offline-capable shell
 - ♿ **Accessible** — ARIA labels, keyboard navigation, focus management throughout

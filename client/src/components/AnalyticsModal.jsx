@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BarChart3, X, Zap, Target, Award, Download } from "lucide-react";
+import { BarChart3, X, Zap, Target, Award, Download, FileJson, FileSpreadsheet } from "lucide-react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import Button from "./ui/Button";
@@ -7,6 +7,7 @@ import Button from "./ui/Button";
 export default function AnalyticsModal({ isOpen, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(null); // "json" | "csv" | null
 
   useEffect(() => {
     if (!isOpen) return;
@@ -26,7 +27,8 @@ export default function AnalyticsModal({ isOpen, onClose }) {
     fetchAnalytics();
   }, [isOpen]);
 
-  const handleExportData = async () => {
+  const handleExportJSON = async () => {
+    setExporting("json");
     try {
       const response = await API.get("/habits/export");
       const blob = new Blob([JSON.stringify(response.data, null, 2)], {
@@ -40,9 +42,36 @@ export default function AnalyticsModal({ isOpen, onClose }) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success("Data export downloaded!");
+      toast.success("JSON export downloaded!");
     } catch {
-      toast.error("Failed to export data");
+      toast.error("Failed to export JSON");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setExporting("csv");
+    try {
+      // Use the raw axios instance so we get the CSV text, not parsed JSON
+      const response = await API.get("/habits/export", {
+        params: { format: "csv" },
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `habitforge-export-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("CSV export downloaded!");
+    } catch {
+      toast.error("Failed to export CSV");
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -118,16 +147,33 @@ export default function AnalyticsModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* --- EXPORT BUTTON PLACEMENT --- */}
-            <div className="pt-3 border-t border-white/10 flex justify-end">
-              <Button
-                onClick={handleExportData}
-                variant="glass"
-                size="sm"
-                className="flex items-center gap-1.5 text-xs bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 text-slate-200 px-3.5 py-2 rounded-xl font-medium shadow-sm"
-              >
-                <Download size={14} /> Export All Data (.JSON)
-              </Button>
+            {/* --- EXPORT BUTTONS --- */}
+            <div className="pt-3 border-t border-white/10">
+              <p className="text-[11px] text-slate-500 mb-2.5 uppercase tracking-wider font-semibold">
+                Export All Data
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleExportJSON}
+                  disabled={exporting !== null}
+                  variant="glass"
+                  size="sm"
+                  className="flex items-center gap-1.5 text-xs bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 text-slate-200 px-3.5 py-2 rounded-xl font-medium shadow-sm disabled:opacity-50"
+                >
+                  <FileJson size={14} className="text-amber-400" />
+                  {exporting === "json" ? "Exporting…" : "Export JSON"}
+                </Button>
+                <Button
+                  onClick={handleExportCSV}
+                  disabled={exporting !== null}
+                  variant="glass"
+                  size="sm"
+                  className="flex items-center gap-1.5 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-400/50 text-emerald-300 px-3.5 py-2 rounded-xl font-medium shadow-sm disabled:opacity-50"
+                >
+                  <FileSpreadsheet size={14} />
+                  {exporting === "csv" ? "Exporting…" : "Export CSV"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
