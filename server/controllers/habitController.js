@@ -414,17 +414,54 @@ export const getHabitAnalytics = async (req, res) => {
   }
 };
 
-// @desc    Export user data (profile, habits, and completions)
+// @desc    Export user data — JSON (default) or CSV (?format=csv)
 // @route   GET /api/habits/export
 export const exportUserData = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
     const habits = await Habit.find({ user: req.user._id });
-    const completions = await HabitCompletion.find({ user: req.user._id }).populate(
-      "habit",
-      "title category frequency"
-    );
+    const completions = await HabitCompletion.find({ user: req.user._id })
+      .sort({ date: 1 })
+      .populate("habit", "title category frequency");
 
+    // ── CSV export ─────────────────────────────────────────────────────────────
+    if (req.query.format === "csv") {
+      const escapeCSV = (val) => {
+        const str = val === null || val === undefined ? "" : String(val);
+        return str.includes(",") || str.includes('"') || str.includes("\n")
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      };
+
+      const headers = [
+        "date",
+        "habit_title",
+        "category",
+        "frequency",
+        "xp_earned",
+        "period_key",
+        "completed_at",
+      ];
+
+      const rows = completions.map((c) => [
+        escapeCSV(c.date),
+        escapeCSV(c.habit?.title ?? ""),
+        escapeCSV(c.habit?.category ?? ""),
+        escapeCSV(c.habit?.frequency ?? ""),
+        escapeCSV(c.xpEarned),
+        escapeCSV(c.periodKey),
+        escapeCSV(c.completedAt?.toISOString() ?? ""),
+      ]);
+
+      const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+      const filename = `habitforge_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      return res.send(csv);
+    }
+
+    // ── JSON export (default) ───────────────────────────────────────────────────
     const exportPayload = {
       user: {
         name: user.name,
