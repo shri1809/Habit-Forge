@@ -10,5 +10,6 @@
         "pghe",
         "Segoe",
         "tkhs"
-    ]
+    ],
+    "python.terminal.useEnvFile": true
 }
